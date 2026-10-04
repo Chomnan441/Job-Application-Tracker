@@ -63,7 +63,13 @@ export function ApplicationsPage() {
             >
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent
+              position="popper"
+              side="bottom"
+              align="start"
+              sideOffset={4}
+              avoidCollisions={false}
+            >
               <SelectItem value="all">All statuses</SelectItem>
               {statuses.map((item) => (
                 <SelectItem key={item} value={item}>
