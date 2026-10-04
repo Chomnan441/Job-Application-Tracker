@@ -12,14 +12,14 @@ export type NavItem = {
   id: string
   label: string
   icon: LucideIcon
-  available: boolean
+  to?: string
 }
 
 export const navItems: NavItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, available: true },
-  { id: "applications", label: "Applications", icon: Briefcase, available: false },
-  { id: "analyzer", label: "AI Analyzer", icon: Sparkles, available: false },
-  { id: "cover-letters", label: "Cover Letters", icon: Mail, available: false },
-  { id: "skills", label: "Skills", icon: Layers, available: false },
-  { id: "settings", label: "Settings", icon: Settings, available: false },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, to: "/" },
+  { id: "applications", label: "Applications", icon: Briefcase, to: "/applications" },
+  { id: "analyzer", label: "AI Analyzer", icon: Sparkles },
+  { id: "cover-letters", label: "Cover Letters", icon: Mail },
+  { id: "skills", label: "Skills", icon: Layers },
+  { id: "settings", label: "Settings", icon: Settings },
 ]

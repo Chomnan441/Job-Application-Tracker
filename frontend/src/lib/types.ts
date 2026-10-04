@@ -20,3 +20,13 @@ export type RecentApplication = {
   appliedOn: string
   appliedLabel: string
 }
+
+export type JobApplication = {
+  id: string
+  company: string
+  position: string
+  location: string
+  status: ApplicationStatus
+  appliedOn: string | null
+  appliedLabel: string
+}
