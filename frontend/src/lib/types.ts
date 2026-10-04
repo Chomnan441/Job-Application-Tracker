@@ -6,9 +6,10 @@ export type ApplicationStatus =
   | "rejected"
 
 export type DashboardStat = {
-  id: "total" | "applied" | "interview" | "offer" | "rejected"
+  id: "total" | "interviews" | "offers" | "response-rate"
   label: string
-  value: number
+  value: string
+  detail?: string
 }
 
 export type RecentApplication = {

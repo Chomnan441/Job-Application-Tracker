@@ -1,17 +1,21 @@
 import type { DashboardStat, RecentApplication } from "@/lib/types"
 
 export const mockUser = {
-  name: "Demo User",
+  name: "Chomnan",
   email: "demo@example.com",
-  initials: "DU",
+  initials: "C",
 }
 
 export const mockStats: DashboardStat[] = [
-  { id: "total", label: "Total applications", value: 24 },
-  { id: "applied", label: "Applied", value: 11 },
-  { id: "interview", label: "Interview", value: 4 },
-  { id: "offer", label: "Offer", value: 1 },
-  { id: "rejected", label: "Rejected", value: 6 },
+  { id: "total", label: "Total Applications", value: "24" },
+  { id: "interviews", label: "Interviews", value: "4" },
+  { id: "offers", label: "Offers", value: "1" },
+  {
+    id: "response-rate",
+    label: "Response Rate",
+    value: "50%",
+    detail: "11 replies from 22 submitted",
+  },
 ]
 
 export const mockRecentApplications: RecentApplication[] = [
@@ -47,10 +51,17 @@ export const mockRecentApplications: RecentApplication[] = [
     appliedOn: "2026-09-12",
     appliedLabel: "Sep 12, 2026",
   },
+  {
+    id: "app-pebble",
+    company: "Pebble Studio",
+    position: "Full Stack Engineer",
+    status: "rejected",
+    appliedOn: "2026-09-08",
+    appliedLabel: "Sep 8, 2026",
+  },
 ]
 
 export const mockInsights = [
-  "4 applications still need a skill analysis.",
-  "TypeScript and system design are the most common gaps.",
-  "Northwind Labs is your closest skill match so far.",
+  "3 jobs strongly match your current skills.",
+  "Docker is the most frequently requested missing skill.",
 ]
