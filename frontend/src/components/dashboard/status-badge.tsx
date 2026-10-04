@@ -2,11 +2,11 @@ import { cn } from "@/lib/utils"
 import type { ApplicationStatus } from "@/lib/types"
 
 const statusStyles: Record<ApplicationStatus, string> = {
-  wishlist: "bg-violet-100 text-violet-800",
-  applied: "bg-indigo-100 text-indigo-800",
-  interview: "bg-amber-100 text-amber-900",
+  wishlist: "bg-muted text-muted-foreground",
+  applied: "bg-blue-100 text-blue-800",
+  interview: "bg-purple-100 text-purple-800",
   offer: "bg-emerald-100 text-emerald-800",
-  rejected: "bg-rose-100 text-rose-800",
+  rejected: "bg-red-50 text-red-700/80",
 }
 
 const statusLabels: Record<ApplicationStatus, string> = {

@@ -31,9 +31,9 @@ export function RecentApplications({
                 className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
-                  <h3 className="truncate font-medium">{application.position}</h3>
+                  <h3 className="truncate font-medium">{application.company}</h3>
                   <p className="truncate text-sm text-muted-foreground">
-                    {application.company}
+                    {application.position}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">

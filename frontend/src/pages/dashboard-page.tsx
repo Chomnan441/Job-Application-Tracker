@@ -1,10 +1,4 @@
-import {
-  CircleX,
-  Files,
-  Handshake,
-  MessagesSquare,
-  Send,
-} from "lucide-react"
+import { Files, Handshake, MessagesSquare, Percent } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { InsightsSummary } from "@/components/dashboard/insights-summary"
 import { RecentApplications } from "@/components/dashboard/recent-applications"
@@ -18,10 +12,9 @@ import type { DashboardStat } from "@/lib/types"
 
 const statIcons: Record<DashboardStat["id"], LucideIcon> = {
   total: Files,
-  applied: Send,
-  interview: MessagesSquare,
-  offer: Handshake,
-  rejected: CircleX,
+  interviews: MessagesSquare,
+  offers: Handshake,
+  "response-rate": Percent,
 }
 
 export function DashboardPage() {
@@ -31,15 +24,13 @@ export function DashboardPage() {
         <h2 id="overview-heading" className="sr-only">
           Overview
         </h2>
-        <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+        <ul className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {mockStats.map((stat) => (
-            <li
-              key={stat.id}
-              className={stat.id === "rejected" ? "col-span-2 md:col-span-1" : undefined}
-            >
+            <li key={stat.id} className="h-full">
               <StatCard
                 label={stat.label}
                 value={stat.value}
+                detail={stat.detail}
                 icon={statIcons[stat.id]}
               />
             </li>
