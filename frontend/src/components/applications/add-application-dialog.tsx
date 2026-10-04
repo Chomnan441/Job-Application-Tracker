@@ -227,21 +227,26 @@ export function AddApplicationDialog({
                       <Field data-invalid={fieldState.invalid}>
                         <FieldLabel htmlFor="job-description">
                           Job description
+                          <span className="font-normal text-muted-foreground">
+                            (Optional)
+                          </span>
                         </FieldLabel>
                         <Textarea
                           {...field}
                           id="job-description"
                           rows={4}
                           aria-invalid={fieldState.invalid}
-                          aria-describedby="job-description-hint"
+                          aria-describedby={
+                            fieldState.invalid ? "job-description-error" : undefined
+                          }
                           placeholder="Paste the role summary"
                           className="min-h-24 bg-card"
                         />
-                        <FieldDescription id="job-description-hint">
-                          Optional.
-                        </FieldDescription>
                         {fieldState.invalid ? (
-                          <FieldError errors={[fieldState.error]} />
+                          <FieldError
+                            id="job-description-error"
+                            errors={[fieldState.error]}
+                          />
                         ) : null}
                       </Field>
                     )}
@@ -390,19 +395,25 @@ export function AddApplicationDialog({
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="notes">Notes</FieldLabel>
+                        <FieldLabel htmlFor="notes">
+                          Notes
+                          <span className="font-normal text-muted-foreground">
+                            (Optional)
+                          </span>
+                        </FieldLabel>
                         <Textarea
                           {...field}
                           id="notes"
                           rows={3}
                           aria-invalid={fieldState.invalid}
-                          aria-describedby="notes-hint"
+                          aria-describedby={
+                            fieldState.invalid ? "notes-error" : undefined
+                          }
                           placeholder="Recruiter name, follow-up, or anything else"
                           className="min-h-20 bg-card"
                         />
-                        <FieldDescription id="notes-hint">Optional.</FieldDescription>
                         {fieldState.invalid ? (
-                          <FieldError errors={[fieldState.error]} />
+                          <FieldError id="notes-error" errors={[fieldState.error]} />
                         ) : null}
                       </Field>
                     )}
