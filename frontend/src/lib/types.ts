@@ -1,9 +1,28 @@
-export type ApplicationStatus =
-  | "wishlist"
-  | "applied"
-  | "interview"
-  | "offer"
-  | "rejected"
+export const applicationStatuses = [
+  "wishlist",
+  "applied",
+  "interview",
+  "offer",
+  "rejected",
+] as const
+
+export type ApplicationStatus = (typeof applicationStatuses)[number]
+
+export const workTypes = ["onsite", "hybrid", "remote"] as const
+
+export type WorkType = (typeof workTypes)[number]
+
+export type ApplicationFormData = {
+  company: string
+  position: string
+  jobDescription: string
+  jobUrl: string
+  location: string
+  workType: WorkType
+  status: ApplicationStatus
+  appliedOn: string
+  notes: string
+}
 
 export type DashboardStat = {
   id: "total" | "interviews" | "offers" | "response-rate"
@@ -29,4 +48,8 @@ export type JobApplication = {
   status: ApplicationStatus
   appliedOn: string | null
   appliedLabel: string
+  workType?: WorkType
+  jobDescription?: string
+  jobUrl?: string
+  notes?: string
 }

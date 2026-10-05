@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { Plus, Search } from "lucide-react"
+import { AddApplicationDialog } from "@/components/applications/add-application-dialog"
 import { ApplicationCard } from "@/components/applications/application-card"
 import { ApplicationTable } from "@/components/applications/application-table"
 import { applicationStatusLabels } from "@/components/applications/application-status-badge"
@@ -13,26 +14,32 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { mockApplications } from "@/data/mock-applications"
-import type { ApplicationStatus } from "@/lib/types"
+import type { ApplicationStatus, JobApplication } from "@/lib/types"
 
 const statuses = Object.keys(applicationStatusLabels) as ApplicationStatus[]
 
 type StatusFilter = ApplicationStatus | "all"
 
 export function ApplicationsPage() {
+  const [savedApplications, setSavedApplications] = useState(mockApplications)
+  const [formOpen, setFormOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState<StatusFilter>("all")
 
   const applications = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
 
-    return mockApplications.filter((application) => {
+    return savedApplications.filter((application) => {
       const matchesStatus = status === "all" || application.status === status
       const haystack = `${application.company} ${application.position} ${application.location}`.toLowerCase()
       const matchesQuery = normalizedQuery.length === 0 || haystack.includes(normalizedQuery)
       return matchesStatus && matchesQuery
     })
-  }, [query, status])
+  }, [query, savedApplications, status])
+
+  function handleCreate(application: JobApplication) {
+    setSavedApplications((current) => [application, ...current])
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,14 +86,19 @@ export function ApplicationsPage() {
             </SelectContent>
           </Select>
         </div>
-        <Button type="button" size="lg" className="self-start">
+        <Button
+          type="button"
+          size="lg"
+          className="self-start"
+          onClick={() => setFormOpen(true)}
+        >
           <Plus data-icon="inline-start" aria-hidden="true" />
           Add Application
         </Button>
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Showing {applications.length} of {mockApplications.length}
+        Showing {applications.length} of {savedApplications.length}
       </p>
 
       {applications.length === 0 ? (
@@ -107,6 +119,12 @@ export function ApplicationsPage() {
           </ul>
         </>
       )}
+
+      <AddApplicationDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        onCreate={handleCreate}
+      />
     </div>
   )
 }
