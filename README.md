@@ -2,7 +2,7 @@
 
 A portfolio app for tracking job applications. Later it will use AI to review skill fit and cover letters.
 
-The dashboard currently runs on mock data. The API connects to PostgreSQL. `GET /api/health` checks that the process is running. `GET /api/applications` and `POST /api/applications` read and write the applications table for `DEV_USER_ID`. `GET /api/applications/:id` returns one application for that same user. `PATCH /api/applications/:id` updates only the fields included in the request.
+The dashboard currently runs on mock data. The API connects to PostgreSQL. `GET /api/health` checks that the process is running. `GET /api/applications` and `POST /api/applications` read and write the applications table for `DEV_USER_ID`. `GET /api/applications/:id` returns one application for that same user. `PATCH /api/applications/:id` updates only the fields included in the request. `DELETE /api/applications/:id` removes one application for that same user.
 
 ## Run the frontend
 

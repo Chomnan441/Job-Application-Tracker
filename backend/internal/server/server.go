@@ -17,6 +17,7 @@ func NewRouter(pool *pgxpool.Pool, userID uuid.UUID) *gin.Engine {
 	router.GET("/api/applications", applicationsHandler.List)
 	router.GET("/api/applications/:id", applicationsHandler.Get)
 	router.PATCH("/api/applications/:id", applicationsHandler.Patch)
+	router.DELETE("/api/applications/:id", applicationsHandler.Delete)
 	router.POST("/api/applications", applicationsHandler.Create)
 	return router
 }

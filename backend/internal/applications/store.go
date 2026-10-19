@@ -82,6 +82,21 @@ func (store *Store) Get(ctx context.Context, userID uuid.UUID, id uuid.UUID) (Ap
 	return application, nil
 }
 
+func (store *Store) Delete(ctx context.Context, userID uuid.UUID, id uuid.UUID) error {
+	tag, err := store.pool.Exec(ctx, `
+		delete from applications
+		where id = $1::uuid
+		and user_id = $2::uuid
+	`, id.String(), userID.String())
+	if err != nil {
+		return fmt.Errorf("delete application: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
+
 func (store *Store) Update(ctx context.Context, userID uuid.UUID, id uuid.UUID, patch Patch) (Application, error) {
 	assignments := make([]string, 0)
 	args := make([]any, 0)
