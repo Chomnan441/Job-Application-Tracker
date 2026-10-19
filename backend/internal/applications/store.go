@@ -2,6 +2,7 @@ package applications
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -59,6 +60,25 @@ func (store *Store) List(ctx context.Context, userID uuid.UUID) ([]Application, 
 	}
 
 	return applications, nil
+}
+
+func (store *Store) Get(ctx context.Context, userID uuid.UUID, id uuid.UUID) (Application, error) {
+	row := store.pool.QueryRow(ctx, `
+		select `+applicationColumns+`
+		from applications
+		where id = $1::uuid
+		and user_id = $2::uuid
+	`, id.String(), userID.String())
+
+	application, err := scanApplication(row)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Application{}, err
+		}
+		return Application{}, fmt.Errorf("get application: %w", err)
+	}
+
+	return application, nil
 }
 
 func (store *Store) Create(ctx context.Context, userID uuid.UUID, input CreateInput) (Application, error) {
