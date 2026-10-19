@@ -1,7 +1,9 @@
 package applications
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -11,13 +13,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const maxRequestBytes = 1 << 20
 
+type applicationStore interface {
+	List(ctx context.Context, userID uuid.UUID) ([]Application, error)
+	Get(ctx context.Context, userID uuid.UUID, id uuid.UUID) (Application, error)
+	Create(ctx context.Context, userID uuid.UUID, input CreateInput) (Application, error)
+}
+
 type Handler struct {
-	store  *Store
+	store  applicationStore
 	userID uuid.UUID
 }
 
@@ -49,6 +58,27 @@ func (handler *Handler) List(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, applications)
+}
+
+func (handler *Handler) Get(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "Application id must be a valid UUID.")
+		return
+	}
+
+	application, err := handler.store.Get(c.Request.Context(), handler.userID, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		writeError(c, http.StatusNotFound, "Application not found.")
+		return
+	}
+	if err != nil {
+		log.Printf("get application: %v", err)
+		writeError(c, http.StatusInternalServerError, "Could not load the application.")
+		return
+	}
+
+	c.JSON(http.StatusOK, application)
 }
 
 func (handler *Handler) Create(c *gin.Context) {

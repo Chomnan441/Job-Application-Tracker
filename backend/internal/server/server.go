@@ -15,6 +15,7 @@ func NewRouter(pool *pgxpool.Pool, userID uuid.UUID) *gin.Engine {
 
 	applicationsHandler := applications.NewHandler(pool, userID)
 	router.GET("/api/applications", applicationsHandler.List)
+	router.GET("/api/applications/:id", applicationsHandler.Get)
 	router.POST("/api/applications", applicationsHandler.Create)
 	return router
 }
