@@ -23,6 +23,7 @@ type applicationStore interface {
 	List(ctx context.Context, userID uuid.UUID) ([]Application, error)
 	Get(ctx context.Context, userID uuid.UUID, id uuid.UUID) (Application, error)
 	Update(ctx context.Context, userID uuid.UUID, id uuid.UUID, patch Patch) (Application, error)
+	Delete(ctx context.Context, userID uuid.UUID, id uuid.UUID) error
 	Create(ctx context.Context, userID uuid.UUID, input CreateInput) (Application, error)
 }
 
@@ -128,6 +129,31 @@ func (handler *Handler) Patch(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, updated)
+}
+
+func (handler *Handler) Delete(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "Application id must be a valid UUID.")
+		return
+	}
+	if err := rejectUserIDBody(c); err != nil {
+		writeError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = handler.store.Delete(c.Request.Context(), handler.userID, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		writeError(c, http.StatusNotFound, "Application not found.")
+		return
+	}
+	if err != nil {
+		log.Printf("delete application: %v", err)
+		writeError(c, http.StatusInternalServerError, "Could not delete the application.")
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 func (handler *Handler) Create(c *gin.Context) {
@@ -241,6 +267,29 @@ func validateCreate(request createRequest) (CreateInput, string) {
 		AppliedOn:      appliedOn,
 		Notes:          notes,
 	}, ""
+}
+
+func rejectUserIDBody(c *gin.Context) error {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxRequestBytes)
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		return errInvalid("Request body must be JSON.")
+	}
+	if len(strings.TrimSpace(string(body))) == 0 {
+		return nil
+	}
+
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(body, &fields); err != nil || fields == nil {
+		return nil
+	}
+	if _, ok := fields["userId"]; ok {
+		return errInvalid("userId must not be in the request body.")
+	}
+	if _, ok := fields["user_id"]; ok {
+		return errInvalid("userId must not be in the request body.")
+	}
+	return nil
 }
 
 func decodePatch(c *gin.Context) (Patch, error) {

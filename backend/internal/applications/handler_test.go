@@ -142,6 +142,7 @@ func getApplication(t *testing.T, id string, store applicationStore) *httptest.R
 type fakeStore struct {
 	get    func(ctx context.Context, userID uuid.UUID, id uuid.UUID) (Application, error)
 	update func(ctx context.Context, userID uuid.UUID, id uuid.UUID, patch Patch) (Application, error)
+	remove func(ctx context.Context, userID uuid.UUID, id uuid.UUID) error
 }
 
 func (fake fakeStore) List(context.Context, uuid.UUID) ([]Application, error) {
@@ -292,6 +293,79 @@ func (fake fakeStore) Update(ctx context.Context, userID uuid.UUID, id uuid.UUID
 	return fake.update(ctx, userID, id, patch)
 }
 
+func (fake fakeStore) Delete(ctx context.Context, userID uuid.UUID, id uuid.UUID) error {
+	if fake.remove == nil {
+		return fmt.Errorf("delete was not expected")
+	}
+	return fake.remove(ctx, userID, id)
+}
+
 func (fake fakeStore) Create(context.Context, uuid.UUID, CreateInput) (Application, error) {
 	return Application{}, nil
+}
+
+func TestDeleteRejectsInvalidID(t *testing.T) {
+	recorder := deleteApplication(t, "not-a-uuid", "", fakeStore{})
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, body = %s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestDeleteRejectsUserID(t *testing.T) {
+	recorder := deleteApplication(t, "4dd4c16c-0ba9-423d-8765-76306c2c82c5", `{"userId":"43d83852-7116-48bd-ab2e-de85d874f7e9"}`, fakeStore{})
+	if recorder.Code != http.StatusBadRequest || !strings.Contains(recorder.Body.String(), "userId") {
+		t.Fatalf("status = %d, body = %s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestDeleteReturnsNotFoundWhenNoRowIsRemoved(t *testing.T) {
+	recorder := deleteApplication(t, "4dd4c16c-0ba9-423d-8765-76306c2c82c5", "", fakeStore{
+		remove: func(context.Context, uuid.UUID, uuid.UUID) error {
+			return pgx.ErrNoRows
+		},
+	})
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, body = %s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestDeleteRemovesOnlyTheCurrentUsersApplication(t *testing.T) {
+	applicationID := uuid.MustParse("4dd4c16c-0ba9-423d-8765-76306c2c82c5")
+	var gotUserID uuid.UUID
+	var gotID uuid.UUID
+
+	recorder := deleteApplication(t, applicationID.String(), "", fakeStore{
+		remove: func(_ context.Context, userID uuid.UUID, id uuid.UUID) error {
+			gotUserID = userID
+			gotID = id
+			return nil
+		},
+	})
+
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, body = %s", recorder.Code, recorder.Body.String())
+	}
+	if recorder.Body.Len() != 0 {
+		t.Fatalf("body = %s", recorder.Body.String())
+	}
+	if gotUserID.String() != "43d83852-7116-48bd-ab2e-de85d874f7e9" || gotID != applicationID {
+		t.Fatalf("scope user = %s, id = %s", gotUserID, gotID)
+	}
+}
+
+func deleteApplication(t *testing.T, id string, body string, store applicationStore) *httptest.ResponseRecorder {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+
+	handler := &Handler{
+		store:  store,
+		userID: uuid.MustParse("43d83852-7116-48bd-ab2e-de85d874f7e9"),
+	}
+	router := gin.New()
+	router.DELETE("/api/applications/:id", handler.Delete)
+
+	request := httptest.NewRequest(http.MethodDelete, "/api/applications/"+id, strings.NewReader(body))
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+	return recorder
 }
