@@ -22,6 +22,7 @@ const maxRequestBytes = 1 << 20
 type applicationStore interface {
 	List(ctx context.Context, userID uuid.UUID) ([]Application, error)
 	Get(ctx context.Context, userID uuid.UUID, id uuid.UUID) (Application, error)
+	Update(ctx context.Context, userID uuid.UUID, id uuid.UUID, patch Patch) (Application, error)
 	Create(ctx context.Context, userID uuid.UUID, input CreateInput) (Application, error)
 }
 
@@ -79,6 +80,54 @@ func (handler *Handler) Get(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, application)
+}
+
+func (handler *Handler) Patch(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		writeError(c, http.StatusBadRequest, "Application id must be a valid UUID.")
+		return
+	}
+
+	patch, err := decodePatch(c)
+	if err != nil {
+		writeError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	current, err := handler.store.Get(c.Request.Context(), handler.userID, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		writeError(c, http.StatusNotFound, "Application not found.")
+		return
+	}
+	if err != nil {
+		log.Printf("get application: %v", err)
+		writeError(c, http.StatusInternalServerError, "Could not load the application.")
+		return
+	}
+
+	validated, message := validateCreate(mergePatch(current, patch))
+	if message != "" {
+		writeError(c, http.StatusBadRequest, message)
+		return
+	}
+	if patch.empty() {
+		c.JSON(http.StatusOK, current)
+		return
+	}
+
+	updated, err := handler.store.Update(c.Request.Context(), handler.userID, id, applyValidated(patch, validated))
+	if errors.Is(err, pgx.ErrNoRows) {
+		writeError(c, http.StatusNotFound, "Application not found.")
+		return
+	}
+	if err != nil {
+		log.Printf("update application: %v", err)
+		writeError(c, http.StatusInternalServerError, "Could not update the application.")
+		return
+	}
+
+	c.JSON(http.StatusOK, updated)
 }
 
 func (handler *Handler) Create(c *gin.Context) {
@@ -192,6 +241,166 @@ func validateCreate(request createRequest) (CreateInput, string) {
 		AppliedOn:      appliedOn,
 		Notes:          notes,
 	}, ""
+}
+
+func decodePatch(c *gin.Context) (Patch, error) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxRequestBytes)
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		return Patch{}, errInvalid("Request body must be a JSON object.")
+	}
+
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(body, &fields); err != nil || fields == nil {
+		return Patch{}, errInvalid("Request body must be a JSON object.")
+	}
+	if _, ok := fields["userId"]; ok {
+		return Patch{}, errInvalid("userId must not be in the request body.")
+	}
+	if _, ok := fields["user_id"]; ok {
+		return Patch{}, errInvalid("userId must not be in the request body.")
+	}
+
+	var patch Patch
+	for key, raw := range fields {
+		switch key {
+		case "company":
+			patch.Company, err = patchText(raw)
+		case "position":
+			patch.Position, err = patchText(raw)
+		case "jobDescription":
+			patch.JobDescription, err = patchText(raw)
+		case "jobUrl":
+			patch.JobURL, err = patchText(raw)
+		case "location":
+			patch.Location, err = patchText(raw)
+		case "workType":
+			patch.WorkType, err = patchText(raw)
+		case "status":
+			patch.Status, err = patchText(raw)
+		case "notes":
+			patch.Notes, err = patchText(raw)
+		case "appliedOn":
+			patch.AppliedOnSet = true
+			value, valueErr := decodePatchString(raw)
+			if valueErr != nil {
+				return Patch{}, errInvalid("appliedOn must be a string or null.")
+			}
+			patch.AppliedOn = normalizeDate(value)
+		default:
+			return Patch{}, errInvalid("Unknown field " + key + ".")
+		}
+		if err != nil {
+			return Patch{}, errInvalid(key + " must be a string or null.")
+		}
+	}
+
+	return patch, nil
+}
+
+func patchText(raw json.RawMessage) (*string, error) {
+	value, err := decodePatchString(raw)
+	if err != nil {
+		return nil, err
+	}
+	if value == nil {
+		empty := ""
+		return &empty, nil
+	}
+	return value, nil
+}
+
+func decodePatchString(raw json.RawMessage) (*string, error) {
+	if string(raw) == "null" {
+		return nil, nil
+	}
+
+	var value string
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return nil, err
+	}
+	return &value, nil
+}
+
+func mergePatch(current Application, patch Patch) createRequest {
+	merged := createRequest{
+		Company:        current.Company,
+		Position:       current.Position,
+		JobDescription: current.JobDescription,
+		JobURL:         current.JobURL,
+		Location:       current.Location,
+		WorkType:       current.WorkType,
+		Status:         current.Status,
+		AppliedOn:      current.AppliedOn,
+		Notes:          current.Notes,
+	}
+	if patch.Company != nil {
+		merged.Company = *patch.Company
+	}
+	if patch.Position != nil {
+		merged.Position = *patch.Position
+	}
+	if patch.JobDescription != nil {
+		merged.JobDescription = *patch.JobDescription
+	}
+	if patch.JobURL != nil {
+		merged.JobURL = *patch.JobURL
+	}
+	if patch.Location != nil {
+		merged.Location = *patch.Location
+	}
+	if patch.WorkType != nil {
+		merged.WorkType = *patch.WorkType
+	}
+	if patch.Status != nil {
+		merged.Status = *patch.Status
+	}
+	if patch.AppliedOnSet {
+		merged.AppliedOn = patch.AppliedOn
+	}
+	if patch.Notes != nil {
+		merged.Notes = *patch.Notes
+	}
+	return merged
+}
+
+func applyValidated(patch Patch, validated CreateInput) Patch {
+	if patch.Company != nil {
+		company := validated.Company
+		patch.Company = &company
+	}
+	if patch.Position != nil {
+		position := validated.Position
+		patch.Position = &position
+	}
+	if patch.JobDescription != nil {
+		jobDescription := validated.JobDescription
+		patch.JobDescription = &jobDescription
+	}
+	if patch.JobURL != nil {
+		jobURL := validated.JobURL
+		patch.JobURL = &jobURL
+	}
+	if patch.Location != nil {
+		location := validated.Location
+		patch.Location = &location
+	}
+	if patch.WorkType != nil {
+		workType := validated.WorkType
+		patch.WorkType = &workType
+	}
+	if patch.Status != nil {
+		status := validated.Status
+		patch.Status = &status
+	}
+	if patch.AppliedOnSet {
+		patch.AppliedOn = validated.AppliedOn
+	}
+	if patch.Notes != nil {
+		notes := validated.Notes
+		patch.Notes = &notes
+	}
+	return patch
 }
 
 func normalizeDate(value *string) *string {
