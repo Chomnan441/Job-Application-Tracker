@@ -2,7 +2,7 @@
 
 A portfolio app for tracking job applications. Later it will use AI to review skill fit and cover letters.
 
-The dashboard currently runs on mock data. The API connects to PostgreSQL and has a health check. Request handlers still do not read the database.
+The dashboard currently runs on mock data. The API connects to PostgreSQL. `GET /api/health` checks that the process is running. `GET /api/applications` and `POST /api/applications` read and write the applications table for `DEV_USER_ID`.
 
 ## Run the frontend
 
@@ -21,12 +21,13 @@ Install Go. In `backend`, set `DATABASE_URL` to the direct Supabase connection s
 ```powershell
 cd backend
 $env:DATABASE_URL = "postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres?sslmode=require"
+$env:DEV_USER_ID = "your-dev-user-uuid"
 go run ./cmd/server
 ```
 
 The server logs `connected to postgres` after a successful ping. Open http://localhost:8080/api/health
 
-Run `backend/migrations/001_applications.sql` once in the Supabase SQL editor before storing applications. The request handlers do not use the table yet.
+`DEV_USER_ID` is a temporary user id until authentication exists. Run `backend/migrations/001_applications.sql` once in the Supabase SQL editor before storing applications.
 
 ## Branches
 

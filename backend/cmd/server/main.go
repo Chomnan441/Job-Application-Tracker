@@ -9,6 +9,11 @@ import (
 )
 
 func main() {
+	userID, err := db.DevUserID()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	pool, err := db.Connect(context.Background())
 	if err != nil {
 		log.Fatal(err)
@@ -17,7 +22,7 @@ func main() {
 
 	log.Println("connected to postgres")
 
-	router := server.NewRouter()
+	router := server.NewRouter(pool, userID)
 	err = router.Run(":8080")
 	if err != nil {
 		log.Fatal(err)
