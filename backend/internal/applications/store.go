@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -76,6 +77,73 @@ func (store *Store) Get(ctx context.Context, userID uuid.UUID, id uuid.UUID) (Ap
 			return Application{}, err
 		}
 		return Application{}, fmt.Errorf("get application: %w", err)
+	}
+
+	return application, nil
+}
+
+func (store *Store) Update(ctx context.Context, userID uuid.UUID, id uuid.UUID, patch Patch) (Application, error) {
+	assignments := make([]string, 0)
+	args := make([]any, 0)
+	add := func(column string, value any, cast string) {
+		args = append(args, value)
+		placeholder := fmt.Sprintf("$%d", len(args))
+		if cast != "" {
+			placeholder += "::" + cast
+		}
+		assignments = append(assignments, column+" = "+placeholder)
+	}
+
+	if patch.Company != nil {
+		add("company", *patch.Company, "")
+	}
+	if patch.Position != nil {
+		add("position", *patch.Position, "")
+	}
+	if patch.JobDescription != nil {
+		add("job_description", *patch.JobDescription, "")
+	}
+	if patch.JobURL != nil {
+		add("job_url", *patch.JobURL, "")
+	}
+	if patch.Location != nil {
+		add("location", *patch.Location, "")
+	}
+	if patch.WorkType != nil {
+		add("work_type", *patch.WorkType, "")
+	}
+	if patch.Status != nil {
+		add("status", *patch.Status, "")
+	}
+	if patch.AppliedOnSet {
+		var appliedOn any
+		if patch.AppliedOn != nil {
+			appliedOn = *patch.AppliedOn
+		}
+		add("applied_on", appliedOn, "date")
+	}
+	if patch.Notes != nil {
+		add("notes", *patch.Notes, "")
+	}
+	if len(assignments) == 0 {
+		return Application{}, fmt.Errorf("update application: no fields")
+	}
+
+	args = append(args, id.String(), userID.String())
+	query := fmt.Sprintf(`
+		update applications
+		set %s
+		where id = $%d::uuid
+		and user_id = $%d::uuid
+		returning %s
+	`, strings.Join(assignments, ", "), len(args)-1, len(args), applicationColumns)
+
+	application, err := scanApplication(store.pool.QueryRow(ctx, query, args...))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Application{}, err
+		}
+		return Application{}, fmt.Errorf("update application: %w", err)
 	}
 
 	return application, nil
