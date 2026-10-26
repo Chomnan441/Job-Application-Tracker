@@ -13,8 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { listApplications } from "@/services/applications-api"
-import type { ApplicationStatus, JobApplication } from "@/lib/types"
+import { createApplication, listApplications } from "@/services/applications-api"
+import type { ApplicationFormData, ApplicationStatus, JobApplication } from "@/lib/types"
 
 const statuses = Object.keys(applicationStatusLabels) as ApplicationStatus[]
 
@@ -67,8 +67,10 @@ export function ApplicationsPage() {
     })
   }, [query, savedApplications, status])
 
-  function handleCreate(application: JobApplication) {
+  async function handleCreate(data: ApplicationFormData) {
+    const application = await createApplication(data)
     setSavedApplications((current) => [application, ...current])
+    return application
   }
 
   function retryLoad() {

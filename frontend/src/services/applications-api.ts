@@ -3,6 +3,7 @@ import {
   applicationStatuses,
   workTypes,
   type ApplicationStatus,
+  type ApplicationFormData,
   type JobApplication,
   type WorkType,
 } from "@/lib/types"
@@ -36,7 +37,7 @@ export async function listApplications(): Promise<JobApplication[]> {
   }
 
   if (!response.ok) {
-    throw new ApplicationsApiError(await readErrorMessage(response))
+    throw new ApplicationsApiError(await readErrorMessage(response, "Could not load applications."))
   }
 
   let body: unknown
@@ -53,7 +54,43 @@ export async function listApplications(): Promise<JobApplication[]> {
   return body.map(toJobApplication)
 }
 
-async function readErrorMessage(response: Response) {
+export async function createApplication(data: ApplicationFormData): Promise<JobApplication> {
+  let response: Response
+  try {
+    response = await fetch("/api/applications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        company: data.company,
+        position: data.position,
+        jobDescription: data.jobDescription,
+        jobUrl: data.jobUrl,
+        location: data.location,
+        workType: data.workType,
+        status: data.status,
+        appliedOn: data.appliedOn.trim() === "" ? null : data.appliedOn,
+        notes: data.notes,
+      }),
+    })
+  } catch {
+    throw new ApplicationsApiError("Could not reach the applications API.")
+  }
+
+  if (!response.ok) {
+    throw new ApplicationsApiError(await readErrorMessage(response, "Could not save the application."))
+  }
+
+  let body: unknown
+  try {
+    body = await response.json()
+  } catch {
+    throw new ApplicationsApiError("The applications API returned an unexpected response.")
+  }
+
+  return toJobApplication(body)
+}
+
+async function readErrorMessage(response: Response, fallback: string) {
   try {
     const body: unknown = await response.json()
     if (
@@ -66,10 +103,10 @@ async function readErrorMessage(response: Response) {
       return body.error
     }
   } catch {
-    return "Could not load applications."
+    return fallback
   }
 
-  return "Could not load applications."
+  return fallback
 }
 
 function toJobApplication(value: unknown): JobApplication {

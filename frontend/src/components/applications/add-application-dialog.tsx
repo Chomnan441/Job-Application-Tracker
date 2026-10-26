@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { applicationStatusLabels } from "@/components/applications/application-status-badge"
@@ -27,11 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  applicationFormSchema,
-  toJobApplication,
-  workTypeLabels,
-} from "@/lib/application-form"
+import { applicationFormSchema, workTypeLabels } from "@/lib/application-form"
 import {
   applicationStatuses,
   workTypes,
@@ -54,7 +51,7 @@ const emptyForm = {
 type AddApplicationDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onCreate: (application: JobApplication) => void
+  onCreate: (data: ApplicationFormData) => Promise<JobApplication>
 }
 
 type ChoiceFieldProps = {
@@ -121,24 +118,37 @@ export function AddApplicationDialog({
   onOpenChange,
   onCreate,
 }: AddApplicationDialogProps) {
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const form = useForm({
     resolver: zodResolver(applicationFormSchema),
     defaultValues: emptyForm,
   })
 
   function handleOpenChange(nextOpen: boolean) {
+    if (saving) {
+      return
+    }
     if (!nextOpen) {
       form.reset(emptyForm)
     }
+    setSaveError(null)
     onOpenChange(nextOpen)
   }
 
-  function handleSubmit(data: ApplicationFormData) {
-    const application = toJobApplication(data)
-    console.log(data)
-    onCreate(application)
-    form.reset(emptyForm)
-    onOpenChange(false)
+  async function handleSubmit(data: ApplicationFormData) {
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await onCreate(data)
+      form.reset(emptyForm)
+      setSaveError(null)
+      onOpenChange(false)
+    } catch (cause) {
+      setSaveError(cause instanceof Error ? cause.message : "Could not save the application.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   const status = form.watch("status")
@@ -422,17 +432,23 @@ export function AddApplicationDialog({
               </FieldGroup>
             </FieldSet>
           </div>
+          {saveError ? (
+            <p role="alert" className="px-4 pb-2 text-sm text-destructive">
+              {saveError}
+            </p>
+          ) : null}
           <DialogFooter className="mx-0 mb-0">
             <Button
               type="button"
               variant="outline"
               className="w-full sm:w-auto"
+              disabled={saving}
               onClick={() => handleOpenChange(false)}
             >
               Cancel
             </Button>
-            <Button type="submit" className="w-full sm:w-auto">
-              Save application
+            <Button type="submit" className="w-full sm:w-auto" disabled={saving}>
+              {saving ? "Saving..." : "Save application"}
             </Button>
           </DialogFooter>
         </form>
