@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Plus, Search } from "lucide-react"
 import { AddApplicationDialog } from "@/components/applications/add-application-dialog"
 import { ApplicationCard } from "@/components/applications/application-card"
@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { mockApplications } from "@/data/mock-applications"
+import { listApplications } from "@/services/applications-api"
 import type { ApplicationStatus, JobApplication } from "@/lib/types"
 
 const statuses = Object.keys(applicationStatusLabels) as ApplicationStatus[]
@@ -21,10 +21,40 @@ const statuses = Object.keys(applicationStatusLabels) as ApplicationStatus[]
 type StatusFilter = ApplicationStatus | "all"
 
 export function ApplicationsPage() {
-  const [savedApplications, setSavedApplications] = useState(mockApplications)
+  const [savedApplications, setSavedApplications] = useState<JobApplication[]>([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
   const [formOpen, setFormOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState<StatusFilter>("all")
+
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+    setLoadError(null)
+
+    listApplications()
+      .then((applications) => {
+        if (active) {
+          setSavedApplications(applications)
+        }
+      })
+      .catch((cause: unknown) => {
+        if (active) {
+          setLoadError(cause instanceof Error ? cause.message : "Could not load applications.")
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [reloadKey])
 
   const applications = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -39,6 +69,10 @@ export function ApplicationsPage() {
 
   function handleCreate(application: JobApplication) {
     setSavedApplications((current) => [application, ...current])
+  }
+
+  function retryLoad() {
+    setReloadKey((current) => current + 1)
   }
 
   return (
@@ -97,11 +131,34 @@ export function ApplicationsPage() {
         </Button>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        Showing {applications.length} of {savedApplications.length}
-      </p>
+      {!loading && !loadError ? (
+        <p className="text-sm text-muted-foreground">
+          Showing {applications.length} of {savedApplications.length}
+        </p>
+      ) : null}
 
-      {applications.length === 0 ? (
+      {loading ? (
+        <p
+          role="status"
+          className="rounded-lg border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground shadow-soft"
+        >
+          Loading applications.
+        </p>
+      ) : loadError ? (
+        <section
+          role="alert"
+          className="flex flex-col items-center gap-3 rounded-lg border border-border bg-card px-4 py-10 text-center shadow-soft"
+        >
+          <p className="text-sm text-muted-foreground">{loadError}</p>
+          <Button type="button" variant="outline" onClick={retryLoad}>
+            Retry
+          </Button>
+        </section>
+      ) : savedApplications.length === 0 ? (
+        <p className="rounded-lg border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground shadow-soft">
+          No applications yet.
+        </p>
+      ) : applications.length === 0 ? (
         <p className="rounded-lg border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground shadow-soft">
           No applications match this search.
         </p>
