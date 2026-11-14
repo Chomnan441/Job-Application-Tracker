@@ -6,6 +6,7 @@ type ApplicationTableProps = {
   applications: JobApplication[]
   onView: (id: string) => void
   onEdit: (id: string) => void
+  onDelete: (id: string) => void
 }
 
 function AppliedDate({ application }: { application: JobApplication }) {
@@ -20,7 +21,12 @@ function AppliedDate({ application }: { application: JobApplication }) {
   )
 }
 
-export function ApplicationTable({ applications, onView, onEdit }: ApplicationTableProps) {
+export function ApplicationTable({
+  applications,
+  onView,
+  onEdit,
+  onDelete,
+}: ApplicationTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card shadow-soft">
       <table className="w-full border-collapse text-left text-sm">
@@ -65,6 +71,7 @@ export function ApplicationTable({ applications, onView, onEdit }: ApplicationTa
                   company={application.company}
                   onView={() => onView(application.id)}
                   onEdit={() => onEdit(application.id)}
+                  onDelete={() => onDelete(application.id)}
                 />
               </td>
             </tr>

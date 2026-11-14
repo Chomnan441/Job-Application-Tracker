@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Plus, Search } from "lucide-react"
 import { AddApplicationDialog } from "@/components/applications/add-application-dialog"
 import { ApplicationDetailDialog } from "@/components/applications/application-detail-dialog"
+import { DeleteApplicationDialog } from "@/components/applications/delete-application-dialog"
 import { ApplicationCard } from "@/components/applications/application-card"
 import { ApplicationTable } from "@/components/applications/application-table"
 import { applicationStatusLabels } from "@/components/applications/application-status-badge"
@@ -14,7 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { createApplication, listApplications, updateApplication } from "@/services/applications-api"
+import {
+  createApplication,
+  deleteApplication,
+  listApplications,
+  updateApplication,
+} from "@/services/applications-api"
 import type { ApplicationFormData, ApplicationStatus, JobApplication } from "@/lib/types"
 
 const statuses = Object.keys(applicationStatusLabels) as ApplicationStatus[]
@@ -29,6 +35,7 @@ export function ApplicationsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
   const [editingApplication, setEditingApplication] = useState<JobApplication | null>(null)
+  const [deletingApplication, setDeletingApplication] = useState<JobApplication | null>(null)
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState<StatusFilter>("all")
 
@@ -91,6 +98,18 @@ export function ApplicationsPage() {
       current.map((item) => (item.id === application.id ? application : item)),
     )
     return application
+  }
+
+  function handleDelete(id: string) {
+    const application = savedApplications.find((item) => item.id === id) ?? null
+    setDeletingApplication(application)
+  }
+
+  async function handleConfirmDelete(id: string) {
+    await deleteApplication(id)
+    setSavedApplications((current) => current.filter((item) => item.id !== id))
+    setDetailId((current) => (current === id ? null : current))
+    setEditingApplication((current) => (current?.id === id ? null : current))
   }
 
   function retryLoad() {
@@ -191,6 +210,7 @@ export function ApplicationsPage() {
               applications={applications}
               onView={setDetailId}
               onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           </div>
           <ul className="flex flex-col gap-3 md:hidden">
@@ -200,6 +220,7 @@ export function ApplicationsPage() {
                   application={application}
                   onView={setDetailId}
                   onEdit={handleEdit}
+                  onDelete={handleDelete}
                 />
               </li>
             ))}
@@ -229,6 +250,15 @@ export function ApplicationsPage() {
             setDetailId(null)
           }
         }}
+      />
+      <DeleteApplicationDialog
+        application={deletingApplication}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeletingApplication(null)
+          }
+        }}
+        onDelete={handleConfirmDelete}
       />
     </div>
   )
