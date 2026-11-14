@@ -1,40 +1,35 @@
-import { Sparkles } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { applicationStatusLabels } from "@/components/applications/application-status-badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+import { applicationStatuses, type ApplicationStatus } from "@/lib/types"
 
 type InsightsSummaryProps = {
-  insights: string[]
+  counts: Record<ApplicationStatus, number>
   className?: string
 }
 
-export function InsightsSummary({ insights, className }: InsightsSummaryProps) {
+export function InsightsSummary({ counts, className }: InsightsSummaryProps) {
   return (
     <section className={cn("flex flex-col", className)} aria-labelledby="insights-heading">
       <Card className="flex-1 rounded-lg border border-border shadow-soft ring-0">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-accent text-primary">
-              <Sparkles aria-hidden="true" className="size-4" />
-            </span>
-            <h2 id="insights-heading" className="text-base font-medium tracking-tight">
-              AI insights
-            </h2>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            A short read of your current search
-          </p>
+          <h2 id="insights-heading" className="text-base font-medium tracking-tight">
+            By status
+          </h2>
+          <p className="text-sm text-muted-foreground">Counts for each stage</p>
         </CardHeader>
         <CardContent>
-          <ul className="flex flex-col gap-3">
-            {insights.map((insight) => (
-              <li
-                key={insight}
-                className="rounded-lg bg-accent/70 px-3 py-3 text-sm leading-6"
+          <dl className="flex flex-col gap-3">
+            {applicationStatuses.map((status) => (
+              <div
+                key={status}
+                className="flex items-center justify-between gap-3 rounded-lg bg-accent/70 px-3 py-3 text-sm"
               >
-                {insight}
-              </li>
+                <dt>{applicationStatusLabels[status]}</dt>
+                <dd className="font-medium">{counts[status]}</dd>
+              </div>
             ))}
-          </ul>
+          </dl>
         </CardContent>
       </Card>
     </section>
