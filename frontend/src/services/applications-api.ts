@@ -90,6 +90,28 @@ export async function createApplication(data: ApplicationFormData): Promise<JobA
   return toJobApplication(body)
 }
 
+export async function getApplication(id: string): Promise<JobApplication> {
+  let response: Response
+  try {
+    response = await fetch(`/api/applications/${id}`)
+  } catch {
+    throw new ApplicationsApiError("Could not reach the applications API.")
+  }
+
+  if (!response.ok) {
+    throw new ApplicationsApiError(await readErrorMessage(response, "Could not load the application."))
+  }
+
+  let body: unknown
+  try {
+    body = await response.json()
+  } catch {
+    throw new ApplicationsApiError("The applications API returned an unexpected response.")
+  }
+
+  return toJobApplication(body)
+}
+
 async function readErrorMessage(response: Response, fallback: string) {
   try {
     const body: unknown = await response.json()

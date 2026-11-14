@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Plus, Search } from "lucide-react"
 import { AddApplicationDialog } from "@/components/applications/add-application-dialog"
+import { ApplicationDetailDialog } from "@/components/applications/application-detail-dialog"
 import { ApplicationCard } from "@/components/applications/application-card"
 import { ApplicationTable } from "@/components/applications/application-table"
 import { applicationStatusLabels } from "@/components/applications/application-status-badge"
@@ -26,6 +27,7 @@ export function ApplicationsPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [formOpen, setFormOpen] = useState(false)
+  const [detailId, setDetailId] = useState<string | null>(null)
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState<StatusFilter>("all")
 
@@ -167,12 +169,12 @@ export function ApplicationsPage() {
       ) : (
         <>
           <div className="hidden md:block">
-            <ApplicationTable applications={applications} />
+            <ApplicationTable applications={applications} onView={setDetailId} />
           </div>
           <ul className="flex flex-col gap-3 md:hidden">
             {applications.map((application) => (
               <li key={application.id}>
-                <ApplicationCard application={application} />
+                <ApplicationCard application={application} onView={setDetailId} />
               </li>
             ))}
           </ul>
@@ -183,6 +185,14 @@ export function ApplicationsPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         onCreate={handleCreate}
+      />
+      <ApplicationDetailDialog
+        applicationId={detailId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailId(null)
+          }
+        }}
       />
     </div>
   )

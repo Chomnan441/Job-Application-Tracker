@@ -4,6 +4,7 @@ import type { JobApplication } from "@/lib/types"
 
 type ApplicationTableProps = {
   applications: JobApplication[]
+  onView: (id: string) => void
 }
 
 function AppliedDate({ application }: { application: JobApplication }) {
@@ -18,7 +19,7 @@ function AppliedDate({ application }: { application: JobApplication }) {
   )
 }
 
-export function ApplicationTable({ applications }: ApplicationTableProps) {
+export function ApplicationTable({ applications, onView }: ApplicationTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card shadow-soft">
       <table className="w-full border-collapse text-left text-sm">
@@ -59,7 +60,10 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
                 <ApplicationStatusBadge status={application.status} />
               </td>
               <td className="px-4 py-4 text-right">
-                <ApplicationActionsMenu company={application.company} />
+                <ApplicationActionsMenu
+                  company={application.company}
+                  onView={() => onView(application.id)}
+                />
               </td>
             </tr>
           ))}
