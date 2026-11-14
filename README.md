@@ -16,12 +16,10 @@ Open http://localhost:5173
 
 ## Run the backend
 
-Install Go. In `backend`, set `DATABASE_URL` to the direct Supabase connection string from Project Settings → Database (host `db.<project-ref>.supabase.co`, port 5432). `backend/.env.example` shows the shape of that string. The program reads the environment variable; it does not open a `.env` file.
+Install Go. Copy `backend/.env.example` to `backend/.env` and set `DATABASE_URL` to the direct Supabase connection string from Project Settings → Database (host `db.<project-ref>.supabase.co`, port 5432). `backend/.env` stays on this machine. The server reads that file when it starts from the `backend` directory. A variable already set in the terminal is kept.
 
 ```powershell
 cd backend
-$env:DATABASE_URL = "postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres?sslmode=require"
-$env:DEV_USER_ID = "your-dev-user-uuid"
 go run ./cmd/server
 ```
 
