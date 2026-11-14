@@ -5,6 +5,7 @@ import type { JobApplication } from "@/lib/types"
 type ApplicationTableProps = {
   applications: JobApplication[]
   onView: (id: string) => void
+  onEdit: (id: string) => void
 }
 
 function AppliedDate({ application }: { application: JobApplication }) {
@@ -19,7 +20,7 @@ function AppliedDate({ application }: { application: JobApplication }) {
   )
 }
 
-export function ApplicationTable({ applications, onView }: ApplicationTableProps) {
+export function ApplicationTable({ applications, onView, onEdit }: ApplicationTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card shadow-soft">
       <table className="w-full border-collapse text-left text-sm">
@@ -63,6 +64,7 @@ export function ApplicationTable({ applications, onView }: ApplicationTableProps
                 <ApplicationActionsMenu
                   company={application.company}
                   onView={() => onView(application.id)}
+                  onEdit={() => onEdit(application.id)}
                 />
               </td>
             </tr>

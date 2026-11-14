@@ -60,17 +60,7 @@ export async function createApplication(data: ApplicationFormData): Promise<JobA
     response = await fetch("/api/applications", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        company: data.company,
-        position: data.position,
-        jobDescription: data.jobDescription,
-        jobUrl: data.jobUrl,
-        location: data.location,
-        workType: data.workType,
-        status: data.status,
-        appliedOn: data.appliedOn.trim() === "" ? null : data.appliedOn,
-        notes: data.notes,
-      }),
+      body: JSON.stringify(applicationRequestBody(data)),
     })
   } catch {
     throw new ApplicationsApiError("Could not reach the applications API.")
@@ -110,6 +100,49 @@ export async function getApplication(id: string): Promise<JobApplication> {
   }
 
   return toJobApplication(body)
+}
+
+export async function updateApplication(
+  id: string,
+  data: ApplicationFormData,
+): Promise<JobApplication> {
+  let response: Response
+  try {
+    response = await fetch(`/api/applications/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(applicationRequestBody(data)),
+    })
+  } catch {
+    throw new ApplicationsApiError("Could not reach the applications API.")
+  }
+
+  if (!response.ok) {
+    throw new ApplicationsApiError(await readErrorMessage(response, "Could not save the application."))
+  }
+
+  let body: unknown
+  try {
+    body = await response.json()
+  } catch {
+    throw new ApplicationsApiError("The applications API returned an unexpected response.")
+  }
+
+  return toJobApplication(body)
+}
+
+function applicationRequestBody(data: ApplicationFormData) {
+  return {
+    company: data.company,
+    position: data.position,
+    jobDescription: data.jobDescription,
+    jobUrl: data.jobUrl,
+    location: data.location,
+    workType: data.workType,
+    status: data.status,
+    appliedOn: data.appliedOn.trim() === "" ? null : data.appliedOn,
+    notes: data.notes,
+  }
 }
 
 async function readErrorMessage(response: Response, fallback: string) {

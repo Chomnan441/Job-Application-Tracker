@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { applicationStatusLabels } from "@/components/applications/application-status-badge"
@@ -52,6 +52,25 @@ type AddApplicationDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onCreate: (data: ApplicationFormData) => Promise<JobApplication>
+  application?: JobApplication | null
+}
+
+function formValues(application?: JobApplication | null) {
+  if (!application) {
+    return emptyForm
+  }
+
+  return {
+    company: application.company,
+    position: application.position,
+    jobDescription: application.jobDescription ?? "",
+    jobUrl: application.jobUrl ?? "",
+    location: application.location,
+    workType: application.workType ?? "",
+    status: application.status,
+    appliedOn: application.appliedOn ?? "",
+    notes: application.notes ?? "",
+  }
 }
 
 type ChoiceFieldProps = {
@@ -117,13 +136,24 @@ export function AddApplicationDialog({
   open,
   onOpenChange,
   onCreate,
+  application = null,
 }: AddApplicationDialogProps) {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const editing = application !== null
   const form = useForm({
     resolver: zodResolver(applicationFormSchema),
     defaultValues: emptyForm,
   })
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    form.reset(formValues(application))
+    setSaveError(null)
+  }, [application, form, open])
 
   function handleOpenChange(nextOpen: boolean) {
     if (saving) {
@@ -158,9 +188,11 @@ export function AddApplicationDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="flex max-h-[min(42rem,calc(100dvh-2rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
         <DialogHeader className="px-4 pt-4 pr-12">
-          <DialogTitle>Add application</DialogTitle>
+          <DialogTitle>{editing ? "Edit application" : "Add application"}</DialogTitle>
           <DialogDescription>
-            Save a role you want to track. Fields marked with * are required.
+            {editing
+              ? "Update this role. Fields marked with * are required."
+              : "Save a role you want to track. Fields marked with * are required."}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -448,7 +480,7 @@ export function AddApplicationDialog({
               Cancel
             </Button>
             <Button type="submit" className="w-full sm:w-auto" disabled={saving}>
-              {saving ? "Saving..." : "Save application"}
+              {saving ? "Saving..." : editing ? "Save changes" : "Save application"}
             </Button>
           </DialogFooter>
         </form>
