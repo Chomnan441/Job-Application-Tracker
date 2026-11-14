@@ -10,9 +10,14 @@ import {
 type ApplicationActionsMenuProps = {
   company: string
   onView: () => void
+  onEdit: () => void
 }
 
-export function ApplicationActionsMenu({ company, onView }: ApplicationActionsMenuProps) {
+export function ApplicationActionsMenu({
+  company,
+  onView,
+  onEdit,
+}: ApplicationActionsMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -27,7 +32,7 @@ export function ApplicationActionsMenu({ company, onView }: ApplicationActionsMe
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={onView}>View details</DropdownMenuItem>
-        <DropdownMenuItem disabled>Edit application</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onEdit}>Edit application</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

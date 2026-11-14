@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { createApplication, listApplications } from "@/services/applications-api"
+import { createApplication, listApplications, updateApplication } from "@/services/applications-api"
 import type { ApplicationFormData, ApplicationStatus, JobApplication } from "@/lib/types"
 
 const statuses = Object.keys(applicationStatusLabels) as ApplicationStatus[]
@@ -28,6 +28,7 @@ export function ApplicationsPage() {
   const [reloadKey, setReloadKey] = useState(0)
   const [formOpen, setFormOpen] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
+  const [editingApplication, setEditingApplication] = useState<JobApplication | null>(null)
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState<StatusFilter>("all")
 
@@ -72,6 +73,23 @@ export function ApplicationsPage() {
   async function handleCreate(data: ApplicationFormData) {
     const application = await createApplication(data)
     setSavedApplications((current) => [application, ...current])
+    return application
+  }
+
+  function handleEdit(id: string) {
+    const application = savedApplications.find((item) => item.id === id) ?? null
+    setEditingApplication(application)
+  }
+
+  async function handleUpdate(data: ApplicationFormData) {
+    if (!editingApplication) {
+      throw new Error("Could not save the application.")
+    }
+
+    const application = await updateApplication(editingApplication.id, data)
+    setSavedApplications((current) =>
+      current.map((item) => (item.id === application.id ? application : item)),
+    )
     return application
   }
 
@@ -169,12 +187,20 @@ export function ApplicationsPage() {
       ) : (
         <>
           <div className="hidden md:block">
-            <ApplicationTable applications={applications} onView={setDetailId} />
+            <ApplicationTable
+              applications={applications}
+              onView={setDetailId}
+              onEdit={handleEdit}
+            />
           </div>
           <ul className="flex flex-col gap-3 md:hidden">
             {applications.map((application) => (
               <li key={application.id}>
-                <ApplicationCard application={application} onView={setDetailId} />
+                <ApplicationCard
+                  application={application}
+                  onView={setDetailId}
+                  onEdit={handleEdit}
+                />
               </li>
             ))}
           </ul>
@@ -185,6 +211,16 @@ export function ApplicationsPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         onCreate={handleCreate}
+      />
+      <AddApplicationDialog
+        open={editingApplication !== null}
+        application={editingApplication}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingApplication(null)
+          }
+        }}
+        onCreate={handleUpdate}
       />
       <ApplicationDetailDialog
         applicationId={detailId}
