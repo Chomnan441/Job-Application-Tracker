@@ -11,12 +11,14 @@ type ApplicationActionsMenuProps = {
   company: string
   onView: () => void
   onEdit: () => void
+  onDelete: () => void
 }
 
 export function ApplicationActionsMenu({
   company,
   onView,
   onEdit,
+  onDelete,
 }: ApplicationActionsMenuProps) {
   return (
     <DropdownMenu>
@@ -33,6 +35,9 @@ export function ApplicationActionsMenu({
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={onView}>View details</DropdownMenuItem>
         <DropdownMenuItem onSelect={onEdit}>Edit application</DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+          Delete application
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

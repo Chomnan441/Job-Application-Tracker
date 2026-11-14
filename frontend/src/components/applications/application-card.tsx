@@ -7,9 +7,15 @@ type ApplicationCardProps = {
   application: JobApplication
   onView: (id: string) => void
   onEdit: (id: string) => void
+  onDelete: (id: string) => void
 }
 
-export function ApplicationCard({ application, onView, onEdit }: ApplicationCardProps) {
+export function ApplicationCard({
+  application,
+  onView,
+  onEdit,
+  onDelete,
+}: ApplicationCardProps) {
   return (
     <Card className="rounded-lg border border-border shadow-soft ring-0">
       <CardContent className="flex flex-col gap-3">
@@ -22,6 +28,7 @@ export function ApplicationCard({ application, onView, onEdit }: ApplicationCard
             company={application.company}
             onView={() => onView(application.id)}
             onEdit={() => onEdit(application.id)}
+            onDelete={() => onDelete(application.id)}
           />
         </div>
         <dl className="grid grid-cols-2 gap-3 text-sm">

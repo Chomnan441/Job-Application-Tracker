@@ -131,6 +131,23 @@ export async function updateApplication(
   return toJobApplication(body)
 }
 
+export async function deleteApplication(id: string): Promise<void> {
+  let response: Response
+  try {
+    response = await fetch(`/api/applications/${id}`, { method: "DELETE" })
+  } catch {
+    throw new ApplicationsApiError("Could not reach the applications API.")
+  }
+
+  if (response.ok) {
+    return
+  }
+
+  throw new ApplicationsApiError(
+    await readErrorMessage(response, "Could not delete the application."),
+  )
+}
+
 function applicationRequestBody(data: ApplicationFormData) {
   return {
     company: data.company,
